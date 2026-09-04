@@ -3,11 +3,18 @@ import { getEventById } from '@/services/eventService';
 import { getSessionFromRequest } from '@/lib/jwt';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = getSessionFromRequest(req);
-  const event = await getEventById(params.id, session?.id);
-  if (!event) return NextResponse.json({ success: false, message: 'Event not found' }, { status: 404 });
-  return NextResponse.json({ success: true, event });
+  try {
+    const session = getSessionFromRequest(req);
+    const event = await getEventById(params.id, session?.id);
+    if (!event) return NextResponse.json({ success: false, message: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ success: true, event });
+  } catch (error: any) {
+    console.error('Error fetching event by id:', error);
+    return NextResponse.json({ success: false, message: 'Event not found' }, { status: 404 });
+  }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {

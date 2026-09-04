@@ -2,15 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAggregatedEvents } from '@/services/eventService';
 import { getSessionFromRequest } from '@/lib/jwt';
 import prisma from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
-  const session = getSessionFromRequest(req);
-  const { searchParams } = new URL(req.url);
-  const category = searchParams.get('category') || undefined;
-  const college = searchParams.get('college') || undefined;
-  const search = searchParams.get('search') || undefined;
-  const sortBy = (searchParams.get('sortBy') as any) || 'date_asc';
-  const result = await getAggregatedEvents({ category, college, search, sortBy }, session?.id);
-  return NextResponse.json({ success: true, ...result });
+  try {
+    const session = getSessionFromRequest(req);
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get('category') || undefined;
+    const college = searchParams.get('college') || undefined;
+    const search = searchParams.get('search') || undefined;
+    const sortBy = (searchParams.get('sortBy') as any) || 'date_asc';
+    const result = await getAggregatedEvents({ category, college, search, sortBy }, session?.id);
+    return NextResponse.json({ success: true, ...result });
+  } catch (error: any) {
+    console.error('Error in events GET:', error);
+    return NextResponse.json({ success: true, events: [], totalCount: 0 });
+  }
 }
 export async function POST(req: NextRequest) {
   const session = getSessionFromRequest(req);
