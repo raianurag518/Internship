@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Host Hub & Organizer Dashboard | UniPass</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- Unified UniPass Header Navigation -->
+  <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-8">
+        <a href="/" class="flex items-center gap-2.5 group">
+          <div class="w-9 h-9 rounded-xl bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 transition">
+            <i class="fa-solid fa-ticket-simple text-base"></i>
+          </div>
+          <div>
+            <span class="font-black text-lg text-white tracking-tight flex items-center gap-1.5">
+              Uni<span class="text-indigo-400">Pass</span>
+            </span>
+            <span class="block text-[9px] uppercase tracking-widest font-mono text-slate-400 -mt-1 font-bold">
+              Escrow & Pass Vault
+            </span>
+          </div>
+        </a>
+
+        <!-- Interlinked Primary Navigation with Host Hub Active -->
+        <nav class="hidden md:flex items-center gap-1">
+          <a href="/events/" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition">
+            <i class="fa-solid fa-compass"></i><span>Aggregator</span>
+          </a>
+          <a href="/resale/" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition">
+            <i class="fa-solid fa-arrows-rotate"></i><span>P2P Escrow</span>
+          </a>
+          <a href="/tickets/" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition">
+            <i class="fa-solid fa-ticket"></i><span>My Passes</span>
+          </a>
+          <a href="/saved/" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-amber-400 hover:bg-slate-900 transition">
+            <i class="fa-solid fa-bookmark text-amber-400"></i><span>Bookmarks</span>
+          </a>
+          <a href="/organizer/" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/10 text-indigo-400 border border-indigo-500/30 transition">
+            <i class="fa-solid fa-qrcode"></i><span>Host Hub</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- User Profile Access / Sign In Container -->
+      <div id="nav-auth-container" class="flex items-center gap-3">
+        <!-- If not signed in: -->
+        <a id="nav-signin-btn" href="/login/" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition hover:scale-105">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Sign In</span>
+        </a>
+
+        <!-- If signed in: -->
+        <div id="nav-user-pill" class="hidden flex items-center gap-2">
+          <a href="/profile/" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/60 transition group shadow-md" title="View & Edit My Profile">
+            <div class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs font-mono" id="nav-avatar">A</div>
+            <div class="hidden sm:block text-left">
+              <p class="font-bold text-white leading-none text-xs" id="nav-user-name">Anurag</p>
+              <p class="text-[10px] text-emerald-400 font-mono">Host Mode</p>
+            </div>
+          </a>
+          <button onclick="handleSignOut()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/40 text-xs transition" title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 space-y-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <h1 class="text-3xl font-black text-white">Organizer Dashboard & Host Hub</h1>
+        <p class="text-xs text-slate-400 mt-1">Manage campus events, gate check-in, and ticket revenues in Indian Rupees (₹ INR)</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="/scanner/" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-600/30">
+          <i class="fa-solid fa-qrcode"></i>
+          <span>Gate Scanner</span>
+        </a>
+        <button onclick="alert('Event creation modal ready for verified campus organizers.')" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-indigo-600/30">
+          <i class="fa-solid fa-circle-plus"></i>
+          <span>Create Event</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Analytics Cards (Rupee currency) -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+        <p class="text-xs text-slate-400 font-bold uppercase">Events Hosted</p>
+        <p class="text-2xl font-black text-white font-mono mt-1">2</p>
+        <p class="text-[10px] text-slate-500 mt-1">1 active, 1 upcoming</p>
+      </div>
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+        <p class="text-xs text-slate-400 font-bold uppercase">Total Revenue (₹ INR)</p>
+        <p class="text-2xl font-black text-emerald-400 font-mono mt-1">₹3,98,701</p>
+        <p class="text-[10px] text-emerald-500 mt-1">+18.4% this cycle</p>
+      </div>
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+        <p class="text-xs text-slate-400 font-bold uppercase">Confirmed Attendees</p>
+        <p class="text-2xl font-black text-indigo-400 font-mono mt-1">1,296</p>
+        <p class="text-[10px] text-slate-500 mt-1">Verified college passes</p>
+      </div>
+      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+        <p class="text-xs text-slate-400 font-bold uppercase">Gate Scanner Check-Ins</p>
+        <p class="text-2xl font-black text-purple-400 font-mono mt-1">842</p>
+        <p class="text-[10px] text-slate-500 mt-1">TOTP verified entries</p>
+      </div>
+    </div>
+
+    <!-- Hosted Events Table -->
+    <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+      <h3 class="text-lg font-black text-white">Your Managed Events</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 uppercase font-bold text-[10px]">
+              <th class="py-3 px-4">Event Title</th>
+              <th class="py-3 px-4">Venue & Date</th>
+              <th class="py-3 px-4">Price</th>
+              <th class="py-3 px-4">Passes Sold</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60">
+            <tr>
+              <td class="py-3.5 px-4 font-bold text-white">IIT Delhi Spring Music Festival & Neon Rave</td>
+              <td class="py-3.5 px-4 text-slate-400">OAT Grounds • Oct 02, 2026</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-emerald-400">₹499</td>
+              <td class="py-3.5 px-4 font-mono text-white">798 / 800</td>
+              <td class="py-3.5 px-4 text-right">
+                <a href="/scanner/" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] inline-flex items-center gap-1">
+                  <i class="fa-solid fa-qrcode"></i> Scan
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td class="py-3.5 px-4 font-bold text-white">IIT Bombay Quantum Computing & AI Summit</td>
+              <td class="py-3.5 px-4 text-slate-400">VMCC Hall • Nov 10, 2026</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-emerald-400">₹299</td>
+              <td class="py-3.5 px-4 font-mono text-white">150 / 150</td>
+              <td class="py-3.5 px-4 text-right">
+                <a href="/scanner/" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs inline-flex items-center gap-1">
+                  <i class="fa-solid fa-qrcode"></i> Scan
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Comprehensive Interlinked Footer -->
+  <footer class="border-t border-slate-900 bg-slate-950 py-12 text-slate-400 text-xs mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-8">
+      <div class="col-span-2 sm:col-span-1 space-y-3">
+        <div class="flex items-center gap-2 text-white font-black text-base">
+          <div class="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-ticket"></i>
+          </div>
+          <span>UniPass</span>
+        </div>
+        <p class="text-slate-500 text-[11px] leading-relaxed">
+          The verified collegiate ticketing, aggregator, and smart contract escrow platform.
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold text-white uppercase text-[11px] tracking-wider">Features</h4>
+        <ul class="space-y-1.5">
+          <li><a href="/" class="hover:text-indigo-400 transition">Home Overview</a></li>
+          <li><a href="/events/" class="hover:text-indigo-400 transition">Events Aggregator</a></li>
+          <li><a href="/resale/" class="hover:text-indigo-400 transition">P2P Resale Escrow</a></li>
+          <li><a href="/tickets/" class="hover:text-indigo-400 transition">Pass Vault & 30s Pass</a></li>
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold text-white uppercase text-[11px] tracking-wider">Student Hub</h4>
+        <ul class="space-y-1.5">
+          <li><a href="/profile/" class="hover:text-indigo-400 transition">My Profile & ID</a></li>
+          <li><a href="/saved/" class="hover:text-indigo-400 transition">Bookmarked Events</a></li>
+          <li><a href="/tickets/" class="hover:text-indigo-400 transition">Active Entrance Passes</a></li>
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold text-white uppercase text-[11px] tracking-wider">Host Tools</h4>
+        <ul class="space-y-1.5 text-slate-500">
+          <li><a href="/organizer/" class="hover:text-indigo-400 transition">Host Hub (Current)</a></li>
+          <li><a href="/scanner/" class="hover:text-indigo-400 transition">Gate Admission Scanner</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Demo Controls (Exact Localhost Workflow) -->
+  <div class="fixed bottom-5 left-5 z-50">
+    <div id="demo-modal" class="hidden p-5 rounded-3xl bg-slate-900/95 border border-indigo-500/40 shadow-2xl backdrop-blur-xl max-w-xs w-72 space-y-4 mb-2">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <div class="flex items-center gap-2 text-xs font-bold text-white">
+          <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
+          <span>Demo Role Switcher</span>
+        </div>
+        <button onclick="toggleDemoSwitcher()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="space-y-1.5 text-xs">
+        <p class="text-[11px] text-slate-400 font-medium">Active Session:</p>
+        <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <div>
+            <p class="font-bold text-white truncate max-w-[150px]" id="demo-user-name">Anurag</p>
+            <p class="text-[10px] text-emerald-400 font-mono" id="demo-user-role">ORGANIZER</p>
+          </div>
+          <span class="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800">Live</span>
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <p class="text-[11px] text-slate-400 font-medium">Switch 1-Click Persona (Anurag):</p>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button onclick="switchRole('STUDENT')" class="py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-[11px] font-bold text-center transition">
+            <div>🎓 Student</div>
+            <div class="text-[10px] text-indigo-300 font-medium mt-0.5">Anurag</div>
+          </button>
+          <button onclick="switchRole('ORGANIZER')" class="py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-300 text-[11px] font-bold text-center transition">
+            <div>🎪 Host</div>
+            <div class="text-[10px] text-emerald-400 font-medium mt-0.5">Anurag</div>
+          </button>
+          <button onclick="switchRole('SCANNER')" class="py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 text-[11px] font-bold text-center transition">
+            <div>🛡️ Scanner</div>
+            <div class="text-[10px] text-amber-400 font-medium mt-0.5">Gate</div>
+          </button>
+        </div>
+      </div>
+      <div class="pt-2 border-t border-slate-800">
+        <button onclick="resetDemoStorage()" class="w-full py-2 px-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>Reset Demo Defaults</span>
+        </button>
+      </div>
+    </div>
+    <button onclick="toggleDemoSwitcher()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xl shadow-indigo-600/40 border border-indigo-400/40 transition">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>Demo Controls</span>
+      <i class="fa-solid fa-chevron-up text-[10px] text-indigo-200"></i>
+    </button>
+  </div>
+
+  <script>
+    const defaultUser = { name: 'Anurag', college: 'Indian Institute of Technology Delhi', role: 'ORGANIZER' };
+
+    function updateAuthNav() {
+      const isSignedIn = localStorage.getItem('campus_session') === 'true';
+      const signinBtn = document.getElementById('nav-signin-btn');
+      const userPill = document.getElementById('nav-user-pill');
+
+      if (isSignedIn) {
+        if (signinBtn) signinBtn.classList.add('hidden');
+        if (userPill) userPill.classList.remove('hidden');
+
+        let user = defaultUser;
+        try {
+          const stored = localStorage.getItem('campus_user');
+          if (stored) user = { ...defaultUser, ...JSON.parse(stored) };
+        } catch(e) {}
+
+        document.getElementById('nav-user-name').innerText = user.name || 'Anurag';
+        document.getElementById('nav-avatar').innerText = (user.name || 'A').charAt(0).toUpperCase();
+        if (document.getElementById('demo-user-name')) document.getElementById('demo-user-name').innerText = user.name || 'Anurag';
+        if (document.getElementById('demo-user-role')) document.getElementById('demo-user-role').innerText = user.role || 'ORGANIZER';
+      } else {
+        if (signinBtn) signinBtn.classList.remove('hidden');
+        if (userPill) userPill.classList.add('hidden');
+        if (document.getElementById('demo-user-name')) document.getElementById('demo-user-name').innerText = 'Not Signed In';
+        if (document.getElementById('demo-user-role')) document.getElementById('demo-user-role').innerText = 'GUEST';
+      }
+    }
+
+    updateAuthNav();
+
+    function handleSignOut() {
+      localStorage.removeItem('campus_session');
+      alert('Signed out successfully.');
+      updateAuthNav();
+    }
+
+    function toggleDemoSwitcher() {
+      const m = document.getElementById('demo-modal');
+      if (m) m.classList.toggle('hidden');
+    }
+
+    function switchRole(role) {
+      let u = { ...defaultUser };
+      localStorage.setItem('campus_session', 'true');
+      if (role === 'ORGANIZER') {
+        u.role = 'ORGANIZER';
+        u.name = 'Anurag';
+        localStorage.setItem('campus_user', JSON.stringify(u));
+        window.location.href = '/organizer/';
+      } else if (role === 'SCANNER') {
+        window.location.href = '/scanner/';
+      } else {
+        u.role = 'STUDENT';
+        u.name = 'Anurag Rai';
+        localStorage.setItem('campus_user', JSON.stringify(u));
+        window.location.href = '/profile/';
+      }
+    }
+
+    function resetDemoStorage() {
+      localStorage.removeItem('campus_session');
+      localStorage.removeItem('campus_user');
+      localStorage.removeItem('campus_bookmarks');
+      alert('Demo state reset to clean defaults!');
+      window.location.reload();
+    }
+  </script>
+</body>
+</html>
