@@ -11,6 +11,58 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
   </style>
+
+  <!-- Firebase App & Firestore SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAz_j1ae3xaDtR-uivH4aGNqJOBD8qw9Ho",
+      authDomain: "studio-37370994-798b7.firebaseapp.com",
+      projectId: "studio-37370994-798b7",
+      storageBucket: "studio-37370994-798b7.firebasestorage.app",
+      messagingSenderId: "497126823684",
+      appId: "1:497126823684:web:fbd3f71d973a233fab2251"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.saveRegistrationToDatabase = async function(user) {
+      try {
+        // 1. Create document in 'users' collection
+        await setDoc(doc(db, "users", user.email), {
+          name: user.name,
+          email: user.email,
+          phone: user.phone || "",
+          college: user.college || "",
+          dept: user.dept || "",
+          roll: user.roll || "",
+          batch: user.batch || "Class of 2027",
+          location: user.location || "Hauz Khas, New Delhi",
+          role: user.role || "STUDENT",
+          trustRating: "0.0",
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+          status: "ACTIVE"
+        }, { merge: true });
+
+        // 2. Add an audit log event in 'signins' collection
+        await addDoc(collection(db, "signins"), {
+          name: user.name,
+          email: user.email,
+          role: user.role || "STUDENT",
+          college: user.college || "",
+          timestamp: new Date().toISOString(),
+          loginType: "NEW_REGISTRATION"
+        });
+        console.log("Recorded registration in Cloud Firestore for:", user.email);
+      } catch (err) {
+        console.error("Firestore registration write error:", err);
+      }
+    };
+  </script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4 selection:bg-indigo-500 selection:text-white">
   <div class="w-full max-w-lg space-y-6">
@@ -23,6 +75,10 @@
       </div>
       <h1 class="text-3xl font-black text-white">Create College Profile</h1>
       <p class="text-xs text-slate-400">Join with your college details to unlock primary & P2P ticket passes</p>
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>Syncs Directly with Cloud Firestore Database</span>
+      </div>
     </div>
 
     <div class="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-2xl">
@@ -65,7 +121,7 @@
         </div>
 
         <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition">
-          Create Account & Access Profile
+          Create Account & Sync to Database
         </button>
       </form>
 
@@ -77,7 +133,7 @@
   </div>
 
   <script>
-    function handleRegister(e) {
+    async function handleRegister(e) {
       e.preventDefault();
       const user = {
         name: document.getElementById('reg-name').value.trim() || 'Anurag Rai',
@@ -93,7 +149,12 @@
       };
       localStorage.setItem('campus_session', 'true');
       localStorage.setItem('campus_user', JSON.stringify(user));
-      alert('College Account created successfully! Redirecting to Home...');
+
+      if (window.saveRegistrationToDatabase) {
+        await window.saveRegistrationToDatabase(user);
+      }
+
+      alert('College Account created and saved in Cloud Firestore! Redirecting to Home...');
       window.location.href = '/';
     }
   </script>

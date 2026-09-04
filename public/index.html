@@ -9,8 +9,53 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
   </style>
+
+  <!-- Firebase App & Firestore SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAz_j1ae3xaDtR-uivH4aGNqJOBD8qw9Ho",
+      authDomain: "studio-37370994-798b7.firebaseapp.com",
+      projectId: "studio-37370994-798b7",
+      storageBucket: "studio-37370994-798b7.firebasestorage.app",
+      messagingSenderId: "497126823684",
+      appId: "1:497126823684:web:fbd3f71d973a233fab2251"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.saveSigninToDatabase = async function(user) {
+      try {
+        await setDoc(doc(db, "users", user.email), {
+          name: user.name,
+          email: user.email,
+          phone: user.phone || "",
+          college: user.college || "",
+          dept: user.dept || "",
+          roll: user.roll || "",
+          role: user.role,
+          lastLoginAt: new Date().toISOString(),
+          status: "ONLINE"
+        }, { merge: true });
+
+        await addDoc(collection(db, "signins"), {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          college: user.college || "",
+          timestamp: new Date().toISOString(),
+          loginType: "ROLE_SWITCH"
+        });
+        console.log("Recorded sign-in in Cloud Firestore for:", user.email);
+      } catch (err) {
+        console.error("Firestore sync error:", err);
+      }
+    };
+  </script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
 
@@ -507,20 +552,23 @@
       if (m) m.classList.toggle('hidden');
     }
 
-    function switchRole(role) {
+    async function switchRole(role) {
       let u = { ...defaultUser };
       localStorage.setItem('campus_session', 'true');
       if (role === 'ORGANIZER') {
         u.role = 'ORGANIZER';
         u.name = 'Anurag';
         localStorage.setItem('campus_user', JSON.stringify(u));
+        if (window.saveSigninToDatabase) await window.saveSigninToDatabase(u);
         window.location.href = '/organizer/';
       } else if (role === 'SCANNER') {
+        if (window.saveSigninToDatabase) await window.saveSigninToDatabase({ ...u, role: 'SCANNER' });
         window.location.href = '/scanner/';
       } else {
         u.role = 'STUDENT';
         u.name = 'Anurag Rai';
         localStorage.setItem('campus_user', JSON.stringify(u));
+        if (window.saveSigninToDatabase) await window.saveSigninToDatabase(u);
         window.location.href = '/profile/';
       }
     }
