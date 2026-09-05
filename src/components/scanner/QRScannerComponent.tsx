@@ -57,13 +57,6 @@ export default function QRScannerComponent() {
             <button type="button" onClick={() => { setInputToken(''); setScanResult(null); }} className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors">Reset</button>
           </div>
         </form>
-        <div className="pt-2 border-t border-slate-800 space-y-2">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Instant Demo Test Tokens:</span>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setInputToken('cc_sec_alex_stanford_hackathon_001')} className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-indigo-300 hover:border-indigo-500">Stanford Pass (Active)</button>
-            <button type="button" onClick={() => setInputToken('cc_sec_alex_mit_concert_002')} className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-amber-300 hover:border-amber-500">MIT Resale Pass</button>
-            <button type="button" onClick={() => setInputToken('cc_fake_forged_screenshot_token')} className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-rose-400 hover:border-rose-500">Counterfeit Pass</button>
-          </div>
         </div>
       </div>
       {scanResult && (

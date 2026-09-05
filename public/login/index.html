@@ -70,7 +70,8 @@
         <i class="fa-solid fa-ticket-simple text-2xl"></i>
       </div>
       <h1 class="text-3xl font-black text-white">Sign In to UniPass</h1>
-      <p class="text-xs text-slate-400">Select a 1-click college persona or enter your student email</p>
+      <p class="text-xs text-slate-400">Enter your college credentials to access your account</p>
+      <p class="text-xs text-slate-400">Enter your college credentials to access your account</p>
       <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
         <span>Connected to Cloud Firestore Database</span>
@@ -79,43 +80,17 @@
 
     <div class="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-2xl">
       
-      <!-- 1-Click Instant College Logins -->
-      <div class="space-y-2">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">1-Click Instant College Login:</span>
-        <div class="grid grid-cols-3 gap-2">
-          <button onclick="loginAs('student')" class="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500 text-left transition hover:scale-105">
-            <p class="font-black text-white text-xs">🎓 Student</p>
-            <p class="text-[10px] text-indigo-400 font-semibold mt-0.5">Anurag Rai</p>
-            <p class="text-[9px] text-slate-500">IIT Delhi</p>
-          </button>
-          <button onclick="loginAs('organizer')" class="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-emerald-500 text-left transition hover:scale-105">
-            <p class="font-black text-emerald-400 text-xs">🎪 Host</p>
-            <p class="text-[10px] text-emerald-400 font-semibold mt-0.5">Anurag</p>
-            <p class="text-[9px] text-slate-500">Events Board</p>
-          </button>
-          <button onclick="loginAs('admin')" class="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500 text-left transition hover:scale-105">
-            <p class="font-black text-amber-400 text-xs">🛡️ Admin</p>
-            <p class="text-[10px] text-amber-400 font-semibold mt-0.5">Anurag</p>
-            <p class="text-[9px] text-slate-500">Platform Admin</p>
-          </button>
-        </div>
-      </div>
-
-      <div class="relative flex py-1 items-center">
-        <div class="flex-grow border-t border-slate-800"></div>
-        <span class="flex-shrink mx-3 text-[10px] text-slate-500 font-bold uppercase font-mono">Or Manual Credentials</span>
-        <div class="flex-grow border-t border-slate-800"></div>
-      </div>
-
       <!-- Manual Form -->
       <form onsubmit="handleManualLogin(event)" class="space-y-3">
         <div>
           <label class="block text-xs font-bold text-slate-300 uppercase mb-1">College Email (.edu / .ac.in / Gmail)</label>
-          <input type="email" id="email" required placeholder="raianurag518@gmail.com" value="raianurag518@gmail.com" class="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-white focus:border-indigo-500 focus:outline-none">
+          <input type="email" id="email" required placeholder="student@college.edu"  class="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-white focus:border-indigo-500 focus:outline-none">
+          <input type="email" id="email" required placeholder="student@college.edu" class="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-white focus:border-indigo-500 focus:outline-none">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Password</label>
-          <input type="password" id="password" required value="Student@1234" class="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-white focus:border-indigo-500 focus:outline-none">
+          <input type="password" id="password" required  class="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-white focus:border-indigo-500 focus:outline-none">
+          <input type="password" id="password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-white focus:border-indigo-500 focus:outline-none">
         </div>
         <button type="submit" id="btn-submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition">
           Sign In & Sync with Database
@@ -130,59 +105,6 @@
   </div>
 
   <script>
-    async function loginAs(role) {
-      let user = {
-        name: 'Anurag Rai',
-        email: 'raianurag518@gmail.com',
-        phone: '9723890793',
-        roll: '202310842',
-        college: 'Indian Institute of Technology Delhi (IIT Delhi)',
-        dept: 'B.Tech Computer Science & Engineering',
-        batch: 'Class of 2027',
-        location: 'Hauz Khas, New Delhi',
-        role: 'STUDENT',
-        trustRating: '0.0'
-      };
-
-      if (role === 'organizer') {
-        user = {
-          name: 'Anurag (Events Council)',
-          email: 'organizer@unipass.demo',
-          phone: '9723890793',
-          roll: 'ORG-IITD-2026',
-          college: 'IIT Delhi Student Affairs & Cultural Council',
-          dept: 'Campus Events & Programming Board',
-          batch: 'Lead Coordinator',
-          location: 'New Delhi, India',
-          role: 'ORGANIZER',
-          trustRating: '0.0'
-        };
-      } else if (role === 'admin') {
-        user = {
-          name: 'Anurag (Platform Admin)',
-          email: 'admin@unipass.demo',
-          phone: '9723890793',
-          roll: 'ADM-EXEC-01',
-          college: 'Office of College Platform Administration',
-          dept: 'Trust & Safety Escrow Board',
-          batch: 'Lead Administrator',
-          location: 'University Secretariat',
-          role: 'ADMIN',
-          trustRating: '0.0'
-        };
-      }
-
-      localStorage.setItem('campus_session', 'true');
-      localStorage.setItem('campus_user', JSON.stringify(user));
-
-      // Record sign in into Cloud Firestore
-      if (window.saveSigninToDatabase) {
-        await window.saveSigninToDatabase(user);
-      }
-
-      alert('Signed in successfully as ' + user.name + '! Login recorded in Cloud Firestore database.');
-      window.location.href = role === 'organizer' ? '/organizer/' : '/';
-    }
 
     async function handleManualLogin(e) {
       e.preventDefault();

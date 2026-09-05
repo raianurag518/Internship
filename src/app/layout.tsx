@@ -4,7 +4,6 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import DemoSwitcher from '@/components/common/DemoSwitcher';
 
 export const metadata: Metadata = {
   title: 'UniPass – Multi-Platform College Event Aggregator & Secure Ticket Escrow',
@@ -25,7 +24,6 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
-            <DemoSwitcher />
           </AuthProvider>
         </ToastProvider>
       </body>
