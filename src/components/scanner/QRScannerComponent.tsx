@@ -57,7 +57,6 @@ export default function QRScannerComponent() {
             <button type="button" onClick={() => { setInputToken(''); setScanResult(null); }} className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors">Reset</button>
           </div>
         </form>
-        </div>
       </div>
       {scanResult && (
         <div className={'p-6 sm:p-8 rounded-3xl border shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 ' + (scanResult.isValid ? 'bg-emerald-950/80 border-emerald-500 text-emerald-100' : scanResult.code === 'ALREADY_USED' ? 'bg-amber-950/80 border-amber-500 text-amber-100' : 'bg-rose-950/80 border-rose-500 text-rose-100')}>
