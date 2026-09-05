@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { Ticket, Loader2, Phone, Building, User, Mail, Lock, GraduationCap } from 'lucide-react';
+import { Ticket, Loader2, Phone, Building, User, Mail, Lock, GraduationCap, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
   const { showToast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -18,7 +19,7 @@ export default function RegisterPage() {
     studentId: '',
     department: 'Computer Science & Engineering',
     password: '',
-    role: 'STUDENT',
+    role: 'STUDENT' as 'STUDENT' | 'ORGANIZER',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,7 +34,7 @@ export default function RegisterPage() {
     try {
       await register(form as any);
       showToast('Account created successfully!', 'success');
-      router.push('/dashboard');
+      router.push(form.role === 'ORGANIZER' ? '/organizer' : '/dashboard');
     } catch (err: any) {
       showToast(err.message || 'Registration failed', 'error');
     } finally {
@@ -49,11 +50,59 @@ export default function RegisterPage() {
             <Ticket className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-black text-white">Join UniPass</h1>
-          <p className="text-xs text-slate-400">Create your college student & event account</p>
+          <p className="text-xs text-slate-400">Create your college account as a Student or Host</p>
         </div>
 
         <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Account Type Selection (Student vs Host) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-300 uppercase">Account Type *</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: 'STUDENT' })}
+                  className={'p-3 rounded-2xl border text-left transition flex flex-col justify-between ' + (
+                    form.role === 'STUDENT'
+                      ? 'bg-indigo-600/15 border-indigo-500 ring-2 ring-indigo-500/30'
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-400'
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <div className={'p-1.5 rounded-lg ' + (form.role === 'STUDENT' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400')}>
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    {form.role === 'STUDENT' && (
+                      <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">Selected</span>
+                    )}
+                  </div>
+                  <p className="font-bold text-white text-xs">🎓 Student</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Attend events & passes</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: 'ORGANIZER' })}
+                  className={'p-3 rounded-2xl border text-left transition flex flex-col justify-between ' + (
+                    form.role === 'ORGANIZER'
+                      ? 'bg-emerald-600/15 border-emerald-500 ring-2 ring-emerald-500/30'
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-400'
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <div className={'p-1.5 rounded-lg ' + (form.role === 'ORGANIZER' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400')}>
+                      <Building className="w-4 h-4" />
+                    </div>
+                    {form.role === 'ORGANIZER' && (
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Selected</span>
+                    )}
+                  </div>
+                  <p className="font-bold text-white text-xs">🎪 Host</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Publish events & scan</p>
+                </button>
+              </div>
+            </div>
+
             {/* Full Name */}
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Full Name *</label>
@@ -64,7 +113,7 @@ export default function RegisterPage() {
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Anurag Rai"
+                  placeholder={form.role === 'ORGANIZER' ? 'Anurag (Events Council)' : 'Anurag Rai'}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white text-xs"
                 />
               </div>
@@ -72,7 +121,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase mb-1">College Email (.edu / .ac.in) *</label>
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-1">College Email (.edu / .ac.in / Gmail) *</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
@@ -80,7 +129,7 @@ export default function RegisterPage() {
                   required
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="raianurag518@gmail.com"
+                  placeholder="student@college.edu"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white text-xs font-mono"
                 />
               </div>
@@ -131,35 +180,44 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Student Roll / ID */}
+            {/* Student Roll / ID or Host Staff ID */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Student Roll / College ID (Optional)</label>
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                {form.role === 'ORGANIZER' ? 'Organizer / Host Staff ID (Optional)' : 'Student Roll / College ID (Optional)'}
+              </label>
               <input
                 type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
                 value={form.studentId}
-                onChange={(e) => setForm({ ...form, studentId: e.target.value.replace(/\D/g, '').slice(0, 15) })}
-                placeholder="e.g. 202310842"
-                maxLength={15}
+                onChange={(e) => setForm({ ...form, studentId: e.target.value.slice(0, 20) })}
+                placeholder={form.role === 'ORGANIZER' ? 'e.g. ORG-IITD-2026' : 'e.g. 202310842'}
+                maxLength={20}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-white text-xs font-mono"
               />
             </div>
 
-            {/* Password */}
+            {/* Password with Eye Button Toggle */}
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Password *</label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="••••••••"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white text-xs"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 pl-10 pr-10 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition focus:outline-none"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
