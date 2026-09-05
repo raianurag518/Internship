@@ -133,16 +133,24 @@ export async function buyDirectTicket(
 }
 
 export async function validateTicketAtGate(
-  qrPayload: string,
+  identifier: string,
   organizerId: string,
   gateEventId?: string
 ): Promise<GateValidationResult> {
-  const parts = qrPayload.trim().split(':');
-  const baseQrToken = parts[0];
+  const cleanId = identifier.trim();
+  const parts = cleanId.split(':');
+  const baseToken = parts[0];
   const submittedTotp = parts.length > 1 ? parts[1] : null;
 
-  const ticket = await prisma.ticket.findUnique({
-    where: { qrToken: baseQrToken },
+  // Search by qrToken, ticketNumber (serial e.g. CC-TKT-...), or ticket id
+  const ticket = await prisma.ticket.findFirst({
+    where: {
+      OR: [
+        { qrToken: baseToken },
+        { ticketNumber: baseToken },
+        { id: baseToken },
+      ],
+    },
     include: {
       event: true,
       category: true,
@@ -163,7 +171,7 @@ export async function validateTicketAtGate(
     return {
       isValid: false,
       code: 'INVALID_TOKEN',
-      message: 'Invalid Gate Pass: QR Code signature not recognized.',
+      message: 'Invalid Gate Pass: No registered pass found matching "' + baseToken + '".',
     };
   }
 
@@ -182,12 +190,12 @@ export async function validateTicketAtGate(
     return {
       isValid: false,
       code: 'ALREADY_USED',
-      message: 'Pass Already Used: Checked in earlier. Duplicate screenshots are prohibited.',
+      message: 'Pass Already Used: Checked in earlier. Duplicate entries are prohibited.',
       ticket: ticket as any,
     };
   }
 
-  // 4. Verify 30-second Dynamic TOTP Token (if submitted with time token)
+  // 4. Verify 30-second Dynamic TOTP Token (if submitted with rotating token suffix)
   if (submittedTotp && ticket.dynamicSecret) {
     const isTotpValid = verifyDynamicTotpToken(submittedTotp, ticket.dynamicSecret);
     if (!isTotpValid) {
@@ -225,13 +233,14 @@ export async function validateTicketAtGate(
 
   createAuditLog(
     organizerId,
-    'GATE_CHECK_IN',
+    submittedTotp ? 'GATE_CHECK_IN' : 'GATE_MANUAL_CHECK_IN',
     'Ticket',
     ticket.id,
     {
       ticketNumber: ticket.ticketNumber,
       attendeeName: ticket.currentOwner.name,
       college: ticket.currentOwner.college,
+      method: submittedTotp ? 'DYNAMIC_QR' : 'MANUAL_VERIFICATION',
     }
   );
 
