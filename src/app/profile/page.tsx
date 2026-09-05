@@ -242,16 +242,20 @@ export default function ProfilePage() {
   };
 
   const handleRemoveBookmark = async (eventId: string) => {
+    // Instant optimistic removal in 0ms!
+    const previous = bookmarkedEvents;
+    setBookmarkedEvents((prev) => prev.filter((e) => e.id !== eventId));
     try {
       const res = await fetch(`/api/events/${eventId}/bookmark`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        setBookmarkedEvents((prev) => prev.filter((e) => e.id !== eventId));
         showToast('Removed from bookmarked events', 'success');
       } else {
+        setBookmarkedEvents(previous);
         showToast(data.message || 'Failed to update bookmark', 'error');
       }
     } catch (err: any) {
+      setBookmarkedEvents(previous);
       showToast(err.message || 'Error updating bookmark', 'error');
     }
   };

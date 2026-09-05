@@ -23,7 +23,6 @@ interface TicketTierInput {
   id: string;
   name: string;
   price: string | number;
-  originalPrice: string | number;
   totalQuantity: string | number;
   description: string;
 }
@@ -71,7 +70,6 @@ export default function CreateEventPage() {
       id: 'tier-1',
       name: 'General Student Pass',
       price: '',
-      originalPrice: '',
       totalQuantity: '150',
       description: 'Standard campus access & general entry pass',
     },
@@ -102,7 +100,6 @@ export default function CreateEventPage() {
         id: newId,
         name: suggestedName,
         price: '',
-        originalPrice: '',
         totalQuantity: '50',
         description: 'Includes priority access and exclusive event perks',
       },
@@ -211,17 +208,12 @@ export default function CreateEventPage() {
           discountAmount: discountEnabled && discountForm.type === 'FLAT' ? Number(discountForm.value) || 0 : 0,
           ticketCategories: tiers.map((t) => {
             const price = t.price === '' ? 0 : Number(t.price) || 0;
-            const origPrice = t.originalPrice === '' ? null : Number(t.originalPrice) || null;
-            let tierDiscountPercent = 0;
-            if (origPrice && origPrice > price && price > 0) {
-              tierDiscountPercent = Math.round(((origPrice - price) / origPrice) * 100);
-            }
             return {
               name: t.name.trim(),
               description: t.description ? t.description.trim() : null,
               price,
-              originalPrice: origPrice,
-              discountPercent: tierDiscountPercent,
+              originalPrice: null,
+              discountPercent: 0,
               totalQuantity: Number(t.totalQuantity) || 50,
               maxPerUser: 4,
             };
@@ -416,11 +408,6 @@ export default function CreateEventPage() {
             {/* List of Tiers */}
             <div className="space-y-4">
               {tiers.map((tier, idx) => {
-                const priceNum = Number(tier.price) || 0;
-                const origNum = Number(tier.originalPrice) || 0;
-                const hasDiscount = origNum > priceNum && priceNum > 0;
-                const discountPct = hasDiscount ? Math.round(((origNum - priceNum) / origNum) * 100) : 0;
-
                 return (
                   <div
                     key={tier.id}
@@ -431,11 +418,9 @@ export default function CreateEventPage() {
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black bg-indigo-950 text-indigo-300 border border-indigo-800">
                           Tier #{idx + 1}
                         </span>
-                        {hasDiscount && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-800 animate-pulse">
-                            🔥 {discountPct}% OFF Strikethrough
-                          </span>
-                        )}
+                        <span className="text-xs font-bold text-slate-200">
+                          {tier.name || `Tier ${idx + 1}`}
+                        </span>
                       </div>
 
                       {tiers.length > 1 && (
@@ -453,7 +438,7 @@ export default function CreateEventPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                       {/* Tier Name */}
-                      <div className="sm:col-span-5">
+                      <div className="sm:col-span-6">
                         <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
                           Tier Name *
                         </label>
@@ -468,9 +453,9 @@ export default function CreateEventPage() {
                       </div>
 
                       {/* Tier Price */}
-                      <div className="sm:col-span-2">
+                      <div className="sm:col-span-3">
                         <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                          Price (₹ INR) *
+                          Ticket Price (₹ INR) *
                         </label>
                         <input
                           type="number"
@@ -480,22 +465,6 @@ export default function CreateEventPage() {
                           value={tier.price}
                           onChange={(e) => updateTier(tier.id, 'price', e.target.value)}
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono font-bold focus:border-indigo-500 focus:outline-none"
-                        />
-                      </div>
-
-                      {/* Original / Strikethrough Price (Optional) */}
-                      <div className="sm:col-span-2">
-                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Original (₹)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          placeholder="e.g. 299"
-                          value={tier.originalPrice}
-                          onChange={(e) => updateTier(tier.id, 'originalPrice', e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-slate-300 text-xs font-mono focus:border-indigo-500 focus:outline-none"
                         />
                       </div>
 

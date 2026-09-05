@@ -30,6 +30,12 @@ export default function EventsPage() {
 
   useEffect(() => { fetchEvents(); }, [selectedCategory, sortBy]);
 
+  const handleBookmarkToggle = (eventId: string, isSaved: boolean) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === eventId ? { ...e, isSaved } : e))
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-800 pb-6">
@@ -67,7 +73,12 @@ export default function EventsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((evt) => (
-            <EventCard key={evt.id} event={evt} onBookClick={(e) => setSelectedEventForBooking(e)} />
+            <EventCard
+              key={evt.id}
+              event={evt}
+              onBookClick={(e) => setSelectedEventForBooking(e)}
+              onBookmarkToggle={(isSaved) => handleBookmarkToggle(evt.id, isSaved)}
+            />
           ))}
         </div>
       )}

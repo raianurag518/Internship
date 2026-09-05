@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { EventItem } from '@/types/event';
@@ -11,25 +11,49 @@ import { useToast } from '@/context/ToastContext';
 interface EventCardProps {
   event: EventItem;
   onBookClick?: (event: EventItem) => void;
-  onBookmarkToggle?: () => void;
+  onBookmarkToggle?: (isSaved: boolean) => void;
 }
 
 export default function EventCard({ event, onBookClick, onBookmarkToggle }: EventCardProps) {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const [isSaved, setIsSaved] = useState(Boolean(event.isSaved));
+
+  useEffect(() => {
+    setIsSaved(Boolean(event.isSaved));
+  }, [event.isSaved]);
 
   const handleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) { showToast('Please sign in to save events', 'info'); return; }
+    if (!user) {
+      showToast('Please sign in to save events', 'info');
+      return;
+    }
+
+    // INSTANT OPTIMISTIC UPDATE: fill/unfill icon immediately in 0ms!
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
+    if (onBookmarkToggle) onBookmarkToggle(nextSaved);
+
     try {
       const res = await fetch('/api/events/' + event.id + '/bookmark', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
+        setIsSaved(Boolean(data.isSaved));
+        if (onBookmarkToggle) onBookmarkToggle(Boolean(data.isSaved));
         showToast(data.isSaved ? 'Added to bookmarks' : 'Removed from bookmarks', 'success');
-        if (onBookmarkToggle) onBookmarkToggle();
+      } else {
+        // Revert on error
+        setIsSaved(!nextSaved);
+        if (onBookmarkToggle) onBookmarkToggle(!nextSaved);
+        showToast('Failed to update bookmark', 'error');
       }
-    } catch (err) { showToast('Failed to update bookmark', 'error'); }
+    } catch (err) {
+      setIsSaved(!nextSaved);
+      if (onBookmarkToggle) onBookmarkToggle(!nextSaved);
+      showToast('Failed to update bookmark', 'error');
+    }
   };
 
   const isSoldOut = event.availableSeats <= 0;
@@ -54,8 +78,13 @@ export default function EventCard({ event, onBookClick, onBookmarkToggle }: Even
             </span>
           )}
         </div>
-        <button onClick={handleBookmark} className="absolute top-3 right-3 p-2 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-700 text-slate-300 hover:text-amber-400 hover:scale-110 transition-all">
-          <Bookmark className={'w-4 h-4 ' + (event.isSaved ? 'fill-amber-400 text-amber-400' : '')} />
+        <button
+          type="button"
+          onClick={handleBookmark}
+          aria-label={isSaved ? "Remove bookmark" : "Save bookmark"}
+          className="absolute top-3 right-3 p-2 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-700 text-slate-300 hover:text-amber-400 hover:scale-110 transition-all z-10"
+        >
+          <Bookmark className={'w-4 h-4 transition-all duration-200 ' + (isSaved ? 'fill-amber-400 text-amber-400 scale-110' : 'text-slate-300 hover:text-amber-400')} />
         </button>
         <div className="absolute bottom-3 right-3">
           <span className="px-3 py-1.5 rounded-xl bg-slate-950/90 backdrop-blur-md border border-slate-700 text-white font-extrabold text-xs font-mono shadow-lg">

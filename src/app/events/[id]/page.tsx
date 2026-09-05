@@ -15,16 +15,48 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [event, setEvent] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const fetchEvent = async () => {
     try {
       const res = await fetch('/api/events/' + params.id);
       const data = await res.json();
-      if (data.event) setEvent(data.event);
+      if (data.event) {
+        setEvent(data.event);
+        setIsSaved(Boolean(data.event.isSaved));
+      }
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchEvent(); }, [params.id]);
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      showToast('Please sign in to save events', 'info');
+      return;
+    }
+
+    // INSTANT OPTIMISTIC UPDATE: fill/unfill icon immediately in 0ms!
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
+
+    try {
+      const res = await fetch('/api/events/' + params.id + '/bookmark', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setIsSaved(Boolean(data.isSaved));
+        showToast(data.isSaved ? 'Added to bookmarks' : 'Removed from bookmarks', 'success');
+      } else {
+        setIsSaved(!nextSaved);
+        showToast('Failed to update bookmark', 'error');
+      }
+    } catch (err) {
+      setIsSaved(!nextSaved);
+      showToast('Failed to update bookmark', 'error');
+    }
+  };
 
   if (loading) return <div className="max-w-5xl mx-auto px-4 py-20"><div className="h-96 rounded-3xl bg-slate-900 animate-pulse"></div></div>;
   if (!event) return <div className="max-w-md mx-auto px-4 py-20 text-center text-white"><p>Event not found</p><Link href="/events" className="mt-4 inline-block px-4 py-2 bg-indigo-600 text-xs font-bold rounded-xl">Back</Link></div>;
@@ -35,6 +67,14 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       <div className="relative h-72 sm:h-96 w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-800">
         <Image src={event.bannerUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200'} alt={event.title} fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+        <button
+          type="button"
+          onClick={handleBookmark}
+          aria-label={isSaved ? "Remove bookmark" : "Save bookmark"}
+          className="absolute top-4 right-4 p-3 rounded-2xl bg-slate-950/80 backdrop-blur-md border border-slate-700 text-slate-300 hover:text-amber-400 hover:scale-110 transition-all z-10 shadow-lg"
+        >
+          <Bookmark className={'w-5 h-5 transition-all duration-200 ' + (isSaved ? 'fill-amber-400 text-amber-400 scale-110' : 'text-slate-300 hover:text-amber-400')} />
+        </button>
         <div className="absolute bottom-6 left-6 right-6 space-y-2">
           <h1 className="text-2xl sm:text-4xl font-black text-white">{event.title}</h1>
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300">
