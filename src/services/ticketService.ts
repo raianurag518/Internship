@@ -11,7 +11,8 @@ import { createAuditLog } from './auditService';
 export async function buyDirectTicket(
   eventId: string,
   categoryId: string,
-  buyerId: string
+  buyerId: string,
+  discountCode?: string
 ): Promise<TicketItem> {
   const result = await prisma.$transaction(async (tx) => {
     // 1. Anti-hoarding constraint: check how many tickets user owns for this event
@@ -54,13 +55,27 @@ export async function buyDirectTicket(
       data: { availableSeats: { decrement: 1 } },
     });
 
-    // 4. Generate Cryptographic Pass Tokens
+    // 4. Calculate Final Ticket Price (Host Discount Logic)
+    let finalPrice = category.price;
+    if (discountCode && category.event.discountCode) {
+      const normalizedProvided = String(discountCode).trim().toUpperCase();
+      const normalizedEvent = String(category.event.discountCode).trim().toUpperCase();
+      if (normalizedProvided === normalizedEvent) {
+        if (category.event.discountPercent && category.event.discountPercent > 0) {
+          finalPrice = Math.max(0, Math.round(category.price * (1 - category.event.discountPercent / 100)));
+        } else if (category.event.discountAmount && category.event.discountAmount > 0) {
+          finalPrice = Math.max(0, category.price - category.event.discountAmount);
+        }
+      }
+    }
+
+    // 5. Generate Cryptographic Pass Tokens
     const ticketNumber = generateTicketNumber();
     const dynamicSecret = generateTotpSecret();
     const tempTicketId = 'tkt_' + Date.now();
     const qrToken = generateSecureQrToken(tempTicketId, buyerId);
 
-    // 5. Create Ticket in User's Vault
+    // 6. Create Ticket in User's Vault
     const ticket = await tx.ticket.create({
       data: {
         ticketNumber,
@@ -68,7 +83,7 @@ export async function buyDirectTicket(
         categoryId,
         originalOwnerId: buyerId,
         currentOwnerId: buyerId,
-        originalPrice: category.price,
+        originalPrice: finalPrice,
         qrToken,
         dynamicSecret,
         status: 'ACTIVE',
@@ -89,12 +104,12 @@ export async function buyDirectTicket(
       },
     });
 
-    // 6. Record Initial Ownership History
+    // 7. Record Initial Ownership History
     await tx.ticketOwnershipHistory.create({
       data: {
         ticketId: ticket.id,
         newOwnerId: buyerId,
-        transferPrice: category.price,
+        transferPrice: finalPrice,
         transferType: 'PRIMARY_PURCHASE',
       },
     });

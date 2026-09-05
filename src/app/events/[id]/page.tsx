@@ -51,9 +51,50 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{event.description}</p>
           </div>
         </div>
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
-          <p className="text-2xl font-black text-white font-mono">{event.basePrice === 0 ? 'FREE' : formatCurrency(event.basePrice)}</p>
-          <button onClick={() => setIsBookingOpen(true)} className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2">
+        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pass Pricing</span>
+            <p className="text-2xl font-black text-white font-mono mt-0.5">
+              {event.basePrice === 0 ? 'FREE' : `From ${formatCurrency(event.basePrice)}`}
+            </p>
+          </div>
+
+          {/* Promotional Discount Badge */}
+          {event.discountCode && (
+            <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-800/60 space-y-1">
+              <span className="text-[10px] uppercase font-mono font-bold text-purple-300">Host Special Offer</span>
+              <p className="text-xs font-bold text-white">
+                Use code <span className="font-mono font-black text-purple-300 bg-purple-900/60 px-1.5 py-0.5 rounded">{event.discountCode}</span>
+              </p>
+              <p className="text-[10px] text-purple-300">
+                Get {event.discountPercent ? `${event.discountPercent}% OFF` : `${formatCurrency(event.discountAmount || 0)} OFF`} on all passes!
+              </p>
+            </div>
+          )}
+
+          {/* Ticket Tiers Overview */}
+          {event.ticketCategories && event.ticketCategories.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-slate-800">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Available Pass Tiers ({event.ticketCategories.length})
+              </span>
+              <div className="space-y-1.5">
+                {event.ticketCategories.map((cat) => (
+                  <div key={cat.id} className="flex justify-between items-center text-xs p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                    <div>
+                      <p className="font-bold text-white text-[11px]">{cat.name}</p>
+                      <p className="text-[10px] text-emerald-400 font-mono">{cat.availableQuantity} seats</p>
+                    </div>
+                    <span className="font-mono font-bold text-white text-xs">
+                      {cat.price === 0 ? 'FREE' : formatCurrency(cat.price)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => setIsBookingOpen(true)} className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition hover:scale-105">
             <Ticket className="w-4 h-4" /><span>Reserve Pass</span>
           </button>
         </div>

@@ -72,25 +72,27 @@ export default function ProfilePage() {
         setMyTickets(tData.tickets || []);
       }
 
-      // 2. Fetch hosted events & analytics
-      try {
-        const aRes = await fetch('/api/organizer/analytics');
-        if (aRes.ok) {
-          const aData = await aRes.json();
-          if (aData.stats) setStats(aData.stats);
-          if (aData.events && aData.events.length > 0) setHostedEvents(aData.events);
-        }
-      } catch (e) {}
-
-      try {
-        const oRes = await fetch('/api/organizer/events');
-        if (oRes.ok) {
-          const oData = await oRes.json();
-          if (oData.events && oData.events.length > 0) {
-            setHostedEvents(oData.events);
+      // 2. Fetch hosted events & analytics only if organizer or admin
+      if (user?.role === 'ORGANIZER' || user?.role === 'ADMIN') {
+        try {
+          const aRes = await fetch('/api/organizer/analytics');
+          if (aRes.ok) {
+            const aData = await aRes.json();
+            if (aData.stats) setStats(aData.stats);
+            if (aData.events && aData.events.length > 0) setHostedEvents(aData.events);
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+
+        try {
+          const oRes = await fetch('/api/organizer/events');
+          if (oRes.ok) {
+            const oData = await oRes.json();
+            if (oData.events && oData.events.length > 0) {
+              setHostedEvents(oData.events);
+            }
+          }
+        } catch (e) {}
+      }
 
       // 3. Fetch bookmarked / saved events
       try {
@@ -312,16 +314,18 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Dynamic Performance Metrics (All Starting at 0) */}
+      {/* Dynamic Performance Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {/* Metric 1: Trust & Host Rating */}
+        {/* Metric 1: Trust Rating */}
         <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-1">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] uppercase font-bold tracking-wider">Host Trust Rating</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider">
+              {user?.role === 'ORGANIZER' || user?.role === 'ADMIN' ? 'Host Trust Rating' : 'Trust Rating'}
+            </span>
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
           </div>
           <p className="text-2xl font-black text-amber-400 font-mono">{trustScore} ★</p>
-          <p className="text-[10px] text-slate-500">{reviewCount} attendee reviews</p>
+          <p className="text-[10px] text-slate-500">{reviewCount} campus ratings</p>
         </div>
 
         {/* Metric 2: Active Passes in Vault */}
@@ -334,25 +338,53 @@ export default function ProfilePage() {
           <p className="text-[10px] text-slate-500">In dynamic vault</p>
         </div>
 
-        {/* Metric 3: Events Hosted */}
-        <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] uppercase font-bold tracking-wider">Events Hosted</span>
-            <Calendar className="w-4 h-4 text-emerald-400" />
-          </div>
-          <p className="text-2xl font-black text-emerald-400 font-mono">{eventsHostedCount}</p>
-          <p className="text-[10px] text-slate-500">Published campus events</p>
-        </div>
+        {user?.role === 'ORGANIZER' || user?.role === 'ADMIN' ? (
+          <>
+            {/* Organizer Metric 3: Events Hosted */}
+            <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] uppercase font-bold tracking-wider">Events Hosted</span>
+                <Calendar className="w-4 h-4 text-emerald-400" />
+              </div>
+              <p className="text-2xl font-black text-emerald-400 font-mono">{eventsHostedCount}</p>
+              <p className="text-[10px] text-slate-500">Published campus events</p>
+            </div>
 
-        {/* Metric 4: Total Revenue */}
-        <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] uppercase font-bold tracking-wider">Total Revenue</span>
-            <IndianRupee className="w-4 h-4 text-purple-400" />
-          </div>
-          <p className="text-2xl font-black text-purple-400 font-mono">{formatCurrency(currentRevenue)}</p>
-          <p className="text-[10px] text-slate-500">From pass reservations</p>
-        </div>
+            {/* Organizer Metric 4: Total Revenue */}
+            <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] uppercase font-bold tracking-wider">Total Revenue</span>
+                <IndianRupee className="w-4 h-4 text-purple-400" />
+              </div>
+              <p className="text-2xl font-black text-purple-400 font-mono">{formatCurrency(currentRevenue)}</p>
+              <p className="text-[10px] text-slate-500">From pass reservations</p>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Student Metric 3: Bookmarked Events */}
+            <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] uppercase font-bold tracking-wider">Bookmarked Events</span>
+                <Bookmark className="w-4 h-4 text-amber-400 fill-amber-400" />
+              </div>
+              <p className="text-2xl font-black text-amber-400 font-mono">{bookmarkedEvents.length}</p>
+              <p className="text-[10px] text-slate-500">Saved for later</p>
+            </div>
+
+            {/* Student Metric 4: Academic Verification Status */}
+            <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-1">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-[10px] uppercase font-bold tracking-wider">Student Status</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              </div>
+              <p className="text-xl font-black text-emerald-400 font-mono pt-0.5">
+                Verified
+              </p>
+              <p className="text-[10px] text-slate-500">Active .EDU / .AC.IN</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 2-Column Section: Personal Details + College Details */}
@@ -549,8 +581,8 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* HOSTED EVENTS SECTION WITH "EDIT EVENT" OPTION */}
-      {(user?.role === 'ORGANIZER' || user?.role === 'ADMIN' || hostedEvents.length > 0) && (
+      {/* HOSTED EVENTS SECTION WITH "EDIT EVENT" OPTION (Organizers & Admins Only) */}
+      {(user?.role === 'ORGANIZER' || user?.role === 'ADMIN') && (
         <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-xl">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-4">
             <div>

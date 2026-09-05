@@ -54,6 +54,9 @@ model Event {
   totalCapacity    Int              @default(100)
   availableSeats   Int              @default(100)
   isFeatured       Boolean          @default(false)
+  discountCode     String?
+  discountPercent  Float?           @default(0.0)
+  discountAmount   Float?           @default(0.0)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -69,6 +72,8 @@ model TicketCategory {
   name              String
   description       String?
   price             Float    @default(0.0)
+  originalPrice     Float?
+  discountPercent   Float?   @default(0.0)
   totalQuantity     Int
   availableQuantity Int
   maxPerUser        Int      @default(4)

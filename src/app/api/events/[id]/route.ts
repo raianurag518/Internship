@@ -59,6 +59,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         endDate: endDateObj,
         basePrice: data.basePrice !== undefined ? Number(data.basePrice) : existing.basePrice,
         totalCapacity: data.totalCapacity !== undefined ? Number(data.totalCapacity) : existing.totalCapacity,
+        discountCode: data.discountCode !== undefined ? (data.discountCode ? String(data.discountCode).trim().toUpperCase() : null) : existing.discountCode,
+        discountPercent: data.discountPercent !== undefined ? Number(data.discountPercent) || 0 : existing.discountPercent,
+        discountAmount: data.discountAmount !== undefined ? Number(data.discountAmount) || 0 : existing.discountAmount,
       },
       include: { ticketCategories: true },
     });

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Edit, ArrowLeft, Loader2, Save, Sparkles, Building, MapPin, Tag, Trash2 } from 'lucide-react';
+import { Edit, ArrowLeft, Loader2, Save, Sparkles, Building, MapPin, Tag, Trash2, Percent } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
 import DateTimePicker from '@/components/common/DateTimePicker';
@@ -27,6 +27,8 @@ export default function EditEventPage() {
     endDate: '',
     basePrice: '' as string | number,
     totalCapacity: '' as string | number,
+    discountCode: '',
+    discountPercent: '' as string | number,
   });
 
   useEffect(() => {
@@ -49,6 +51,8 @@ export default function EditEventPage() {
             endDate: e.endDate ? new Date(e.endDate).toISOString() : '',
             basePrice: e.basePrice !== undefined ? String(e.basePrice) : '0',
             totalCapacity: e.totalCapacity !== undefined ? String(e.totalCapacity) : '100',
+            discountCode: e.discountCode || '',
+            discountPercent: e.discountPercent !== undefined && e.discountPercent !== null && e.discountPercent > 0 ? String(e.discountPercent) : '',
           });
         } else {
           showToast('Event not found', 'error');
@@ -100,6 +104,8 @@ export default function EditEventPage() {
           endDate: end.toISOString(),
           basePrice: form.basePrice === '' ? 0 : Number(form.basePrice),
           totalCapacity: form.totalCapacity === '' ? 100 : Number(form.totalCapacity),
+          discountCode: form.discountCode.trim() ? form.discountCode.trim().toUpperCase() : null,
+          discountPercent: form.discountPercent === '' ? 0 : Number(form.discountPercent) || 0,
         }),
       });
 
@@ -325,6 +331,46 @@ export default function EditEventPage() {
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-white text-xs font-mono font-bold"
                 />
                 <p className="text-[10px] text-slate-500 mt-1">Available seats to issue</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Host Discount & Promo Code Section */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+              <Percent className="w-3.5 h-3.5" />
+              <span>Host Discount & Promo Code Option</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Discount / Promo Code
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. CAMPUS20"
+                  value={form.discountCode}
+                  onChange={(e) => setForm({ ...form, discountCode: e.target.value.toUpperCase() })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-white text-xs font-mono font-black uppercase"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Leave empty if no promotional discount code</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Discount Percentage (% OFF)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 20 for 20% off"
+                  value={form.discountPercent}
+                  onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-white text-xs font-mono font-bold"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">% applied when attendees use this code</p>
               </div>
             </div>
           </div>

@@ -17,6 +17,8 @@ export interface TicketCategoryItem {
   name: string;
   description?: string | null;
   price: number;
+  originalPrice?: number | null;
+  discountPercent?: number | null;
   totalQuantity: number;
   availableQuantity: number;
   maxPerUser: number;
@@ -41,6 +43,9 @@ export interface EventItem {
   totalCapacity: number;
   availableSeats: number;
   isFeatured: boolean;
+  discountCode?: string | null;
+  discountPercent?: number | null;
+  discountAmount?: number | null;
   createdAt: string | Date;
   organizer?: {
     id: string;

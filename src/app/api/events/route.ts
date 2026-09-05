@@ -58,11 +58,16 @@ export async function POST(req: NextRequest) {
         basePrice: data.basePrice || 0,
         totalCapacity: data.totalCapacity || 100,
         availableSeats: data.totalCapacity || 100,
+        discountCode: data.discountCode ? String(data.discountCode).trim().toUpperCase() : null,
+        discountPercent: data.discountPercent !== undefined ? Number(data.discountPercent) || 0 : 0,
+        discountAmount: data.discountAmount !== undefined ? Number(data.discountAmount) || 0 : 0,
         ticketCategories: {
           create: (data.ticketCategories || []).map((cat: any) => ({
             name: cat.name,
             description: cat.description || null,
             price: Number(cat.price) || 0,
+            originalPrice: cat.originalPrice !== undefined && cat.originalPrice !== null ? Number(cat.originalPrice) : null,
+            discountPercent: cat.discountPercent !== undefined ? Number(cat.discountPercent) || 0 : 0,
             totalQuantity: Number(cat.totalQuantity) || 100,
             availableQuantity: Number(cat.totalQuantity) || 100,
             maxPerUser: cat.maxPerUser || 4,

@@ -1,10 +1,32 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusCircle, ArrowLeft, Loader2, Sparkles, Building, MapPin, Tag } from 'lucide-react';
+import {
+  PlusCircle,
+  ArrowLeft,
+  Loader2,
+  Sparkles,
+  Building,
+  MapPin,
+  Tag,
+  Trash2,
+  Percent,
+  Layers,
+  Ticket,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
 import DateTimePicker from '@/components/common/DateTimePicker';
+import { formatCurrency } from '@/lib/utils';
+
+interface TicketTierInput {
+  id: string;
+  name: string;
+  price: string | number;
+  originalPrice: string | number;
+  totalQuantity: string | number;
+  description: string;
+}
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -41,12 +63,67 @@ export default function CreateEventPage() {
     venue: 'Dogra Hall & Campus Grounds',
     startDate: getInitialStartDate(),
     endDate: getInitialEndDate(),
-    basePrice: 0,
-    totalCapacity: 200,
-    tierName: 'General Student Pass',
-    tierPrice: '' as string | number,
-    tierQuantity: '200' as string | number,
   });
+
+  // Multi-tier tickets state
+  const [tiers, setTiers] = useState<TicketTierInput[]>([
+    {
+      id: 'tier-1',
+      name: 'General Student Pass',
+      price: '',
+      originalPrice: '',
+      totalQuantity: '150',
+      description: 'Standard campus access & general entry pass',
+    },
+  ]);
+
+  // Host Discount & Promotional Codes state
+  const [discountEnabled, setDiscountEnabled] = useState(false);
+  const [discountForm, setDiscountForm] = useState({
+    code: 'CAMPUS20',
+    type: 'PERCENTAGE' as 'PERCENTAGE' | 'FLAT',
+    value: '20' as string | number,
+  });
+
+  const addTier = () => {
+    const newId = `tier-${Date.now()}`;
+    const count = tiers.length + 1;
+    const presets = [
+      'VIP / Front Row Pass',
+      'Early Bird Pass',
+      'Hackathon Participant Pass',
+      'Workshop Hands-On Pass',
+      'Team / Squad Pass',
+    ];
+    const suggestedName = presets[count - 2] || `Tier ${count} Pass`;
+    setTiers((prev) => [
+      ...prev,
+      {
+        id: newId,
+        name: suggestedName,
+        price: '',
+        originalPrice: '',
+        totalQuantity: '50',
+        description: 'Includes priority access and exclusive event perks',
+      },
+    ]);
+  };
+
+  const removeTier = (id: string) => {
+    if (tiers.length <= 1) {
+      showToast('You must have at least one ticket tier for this event.', 'warning');
+      return;
+    }
+    setTiers((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const updateTier = (id: string, field: keyof TicketTierInput, val: any) => {
+    setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: val } : t)));
+  };
+
+  const totalCapacity = tiers.reduce((acc, t) => acc + (Number(t.totalQuantity) || 0), 0);
+  const validPrices = tiers.map((t) => (t.price === '' ? 0 : Number(t.price))).filter((p) => !isNaN(p));
+  const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +160,36 @@ export default function CreateEventPage() {
       return;
     }
 
+    // Validate Tiers
+    for (let i = 0; i < tiers.length; i++) {
+      const t = tiers[i];
+      if (!t.name.trim()) {
+        showToast(`Please enter a name for Tier #${i + 1}`, 'error');
+        return;
+      }
+      const qty = Number(t.totalQuantity);
+      if (isNaN(qty) || qty <= 0) {
+        showToast(`Please enter a valid seat capacity for ${t.name}`, 'error');
+        return;
+      }
+    }
+
+    if (discountEnabled) {
+      if (!discountForm.code.trim()) {
+        showToast('Please enter a promotional discount code (e.g. CAMPUS20)', 'error');
+        return;
+      }
+      const val = Number(discountForm.value);
+      if (isNaN(val) || val <= 0) {
+        showToast('Please enter a valid discount amount or percentage', 'error');
+        return;
+      }
+      if (discountForm.type === 'PERCENTAGE' && val > 100) {
+        showToast('Percentage discount cannot exceed 100%', 'error');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/events', {
@@ -97,23 +204,35 @@ export default function CreateEventPage() {
           venue: form.venue.trim(),
           startDate: start.toISOString(),
           endDate: end.toISOString(),
-          basePrice: Number(form.tierPrice) || 0,
-          totalCapacity: Number(form.tierQuantity) || 100,
-          ticketCategories: [
-            {
-              name: form.tierName.trim() || 'General Student Pass',
-              price: Number(form.tierPrice) || 0,
-              totalQuantity: Number(form.tierQuantity) || 100,
-              maxPerUser: 2,
-            },
-          ],
+          basePrice: minPrice,
+          totalCapacity: totalCapacity || 100,
+          discountCode: discountEnabled && discountForm.code.trim() ? discountForm.code.trim().toUpperCase() : null,
+          discountPercent: discountEnabled && discountForm.type === 'PERCENTAGE' ? Number(discountForm.value) || 0 : 0,
+          discountAmount: discountEnabled && discountForm.type === 'FLAT' ? Number(discountForm.value) || 0 : 0,
+          ticketCategories: tiers.map((t) => {
+            const price = t.price === '' ? 0 : Number(t.price) || 0;
+            const origPrice = t.originalPrice === '' ? null : Number(t.originalPrice) || null;
+            let tierDiscountPercent = 0;
+            if (origPrice && origPrice > price && price > 0) {
+              tierDiscountPercent = Math.round(((origPrice - price) / origPrice) * 100);
+            }
+            return {
+              name: t.name.trim(),
+              description: t.description ? t.description.trim() : null,
+              price,
+              originalPrice: origPrice,
+              discountPercent: tierDiscountPercent,
+              totalQuantity: Number(t.totalQuantity) || 50,
+              maxPerUser: 4,
+            };
+          }),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to publish event');
 
-      showToast('College Event Published Successfully!', 'success');
+      showToast('College Event with Multi-Tier Tickets Published Successfully!', 'success');
       router.push('/organizer');
     } catch (err: any) {
       showToast(err.message || 'Error creating event', 'error');
@@ -140,7 +259,7 @@ export default function CreateEventPage() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">Create & Publish Campus Event</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Aggregate your hackathon, fest, or workshop with automated anti-scalping escrow & 30s dynamic gate tokens.
+            Publish event passes with multi-tier ticket categories, promotional host discounts, and automated anti-scalping gate tokens.
           </p>
         </div>
 
@@ -271,59 +390,255 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          {/* Ticket Tier & Pricing (in ₹ INR) */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5" />
-              <span>Primary Ticket Tier & Pricing (₹ INR)</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* MULTI-TIER TICKET CONFIGURATION */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 space-y-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Tier Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Early Bird Pass"
-                  value={form.tierName}
-                  onChange={(e) => setForm({ ...form, tierName: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-white text-xs font-medium"
-                />
+                <div className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-400">
+                  <Layers className="w-4 h-4" />
+                  <span>Ticket Tiers & Pass Types</span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Add multiple tiers (e.g. Early Bird, VIP, General Pass) with custom prices and capacities.
+                </p>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Pass Price (₹ INR)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="0 for Free"
-                  value={form.tierPrice}
-                  onChange={(e) => setForm({ ...form, tierPrice: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-white text-xs font-mono font-bold"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">₹0 or empty = Free Student Pass</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Total Capacity
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="e.g. 200"
-                  value={form.tierQuantity}
-                  onChange={(e) => setForm({ ...form, tierQuantity: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-white text-xs font-mono font-bold"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">Available seats to issue</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono font-bold text-indigo-300 bg-indigo-950/80 border border-indigo-800 px-2.5 py-1 rounded-full">
+                  Total Capacity: {totalCapacity} Seats
+                </span>
+                <span className="text-[11px] font-mono font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-800 px-2.5 py-1 rounded-full">
+                  Starting at: {minPrice === 0 ? 'FREE' : formatCurrency(minPrice)}
+                </span>
               </div>
             </div>
+
+            {/* List of Tiers */}
+            <div className="space-y-4">
+              {tiers.map((tier, idx) => {
+                const priceNum = Number(tier.price) || 0;
+                const origNum = Number(tier.originalPrice) || 0;
+                const hasDiscount = origNum > priceNum && priceNum > 0;
+                const discountPct = hasDiscount ? Math.round(((origNum - priceNum) / origNum) * 100) : 0;
+
+                return (
+                  <div
+                    key={tier.id}
+                    className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition space-y-4 relative group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black bg-indigo-950 text-indigo-300 border border-indigo-800">
+                          Tier #{idx + 1}
+                        </span>
+                        {hasDiscount && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-800 animate-pulse">
+                            🔥 {discountPct}% OFF Strikethrough
+                          </span>
+                        )}
+                      </div>
+
+                      {tiers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeTier(tier.id)}
+                          className="p-1.5 rounded-xl bg-slate-950 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800 transition text-xs flex items-center gap-1"
+                          title="Delete this ticket tier"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline text-[11px]">Remove</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                      {/* Tier Name */}
+                      <div className="sm:col-span-5">
+                        <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                          Tier Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. VIP Front-Row Pass or Early Bird"
+                          value={tier.name}
+                          onChange={(e) => updateTier(tier.id, 'name', e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-medium focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Tier Price */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                          Price (₹ INR) *
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0 = Free"
+                          value={tier.price}
+                          onChange={(e) => updateTier(tier.id, 'price', e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono font-bold focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Original / Strikethrough Price (Optional) */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Original (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="e.g. 299"
+                          value={tier.originalPrice}
+                          onChange={(e) => updateTier(tier.id, 'originalPrice', e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-slate-300 text-xs font-mono focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Seats / Capacity */}
+                      <div className="sm:col-span-3">
+                        <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                          Seat Capacity *
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          required
+                          placeholder="e.g. 50"
+                          value={tier.totalQuantity}
+                          onChange={(e) => updateTier(tier.id, 'totalQuantity', e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono font-bold focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tier Perks / Description */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Tier Perks & Description (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Fast-track entry, lunch buffet included, and official certificate"
+                        value={tier.description}
+                        onChange={(e) => updateTier(tier.id, 'description', e.target.value)}
+                        className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-1.5 px-3 text-slate-300 text-xs placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Add Tier Button */}
+            <button
+              type="button"
+              onClick={addTier}
+              className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-800 hover:border-indigo-500 text-slate-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition bg-slate-950/40 hover:bg-slate-900"
+            >
+              <PlusCircle className="w-4 h-4 text-indigo-400" />
+              <span>+ Add Another Ticket Tier</span>
+            </button>
+          </div>
+
+          {/* HOST DISCOUNT & PROMO CODE PANEL */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-950/80 border border-purple-800 text-purple-400">
+                  <Percent className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-purple-400">
+                    Host Discount & Promo Code Option
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Offer students an exclusive discount coupon code during pass reservation
+                  </p>
+                </div>
+              </div>
+
+              {/* Toggle switch */}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={discountEnabled}
+                  onChange={(e) => setDiscountEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+
+            {discountEnabled && (
+              <div className="p-4 rounded-2xl bg-purple-950/20 border border-purple-800/60 space-y-4 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                      Discount Code *
+                    </label>
+                    <input
+                      type="text"
+                      required={discountEnabled}
+                      placeholder="e.g. CAMPUS20"
+                      value={discountForm.code}
+                      onChange={(e) => setDiscountForm({ ...discountForm, code: e.target.value.toUpperCase() })}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono font-black tracking-wider uppercase focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                      Discount Type *
+                    </label>
+                    <select
+                      value={discountForm.type}
+                      onChange={(e) => setDiscountForm({ ...discountForm, type: e.target.value as any })}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-medium focus:border-purple-500 focus:outline-none"
+                    >
+                      <option value="PERCENTAGE">% Percentage Off</option>
+                      <option value="FLAT">₹ Flat Rupees Off</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                      Discount Value ({discountForm.type === 'PERCENTAGE' ? '%' : '₹'}) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={discountForm.type === 'PERCENTAGE' ? 100 : undefined}
+                      required={discountEnabled}
+                      placeholder={discountForm.type === 'PERCENTAGE' ? 'e.g. 20' : 'e.g. 50'}
+                      value={discountForm.value}
+                      onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono font-bold focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-950/70 border border-purple-900/50 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-purple-300 bg-purple-900/40 px-2 py-0.5 rounded border border-purple-700">
+                      {discountForm.code || 'CODE'}
+                    </span>
+                    <span className="text-slate-300">
+                      will grant{' '}
+                      <strong className="text-emerald-400">
+                        {discountForm.value || 0}
+                        {discountForm.type === 'PERCENTAGE' ? '%' : '₹'} OFF
+                      </strong>{' '}
+                      on pass reservations
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
