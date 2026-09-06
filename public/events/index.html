@@ -179,8 +179,27 @@
       { id: 'ev-4', title: 'MIT CleanTech & Fusion Energy Conclave', cat: 'HACKATHONS', college: 'MIT Energy Lab', date: 'Dec 05, 2026', price: 'FREE', seats: 300, img: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800' }
     ];
 
-    function renderEvents(list) {
+    function renderEvents(list, activeCategory = 'ALL') {
       const grid = document.getElementById('events-grid');
+      if (!list || list.length === 0) {
+        const catLabel = activeCategory !== 'ALL' ? activeCategory.replace('_', ' ') : 'Category';
+        grid.innerHTML = '<div class="col-span-full py-16 px-6 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-4 shadow-xl max-w-xl mx-auto">' +
+          '<div class="w-16 h-16 rounded-2xl bg-indigo-950/80 border border-indigo-800/60 flex items-center justify-center mx-auto text-indigo-400">' +
+            '<i class="fa-solid fa-calendar-xmark text-2xl"></i>' +
+          '</div>' +
+          '<div class="space-y-1.5">' +
+            '<h3 class="text-xl font-black text-white">No ' + (activeCategory !== 'ALL' ? catLabel + ' ' : '') + 'Events Found</h3>' +
+            '<p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">There are currently no college events scheduled under the "' + catLabel + '" category. Explore all upcoming events across campuses!</p>' +
+          '</div>' +
+          '<div class="pt-2">' +
+            '<button onclick="filterCat(\'ALL\')" class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition hover:scale-105">' +
+              '<span>View All Events</span>' +
+              '<i class="fa-solid fa-arrow-right"></i>' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+        return;
+      }
       let html = '';
       for (let i = 0; i < list.length; i++) {
         const e = list[i];
@@ -213,8 +232,8 @@
       document.querySelectorAll('.cat-btn').forEach(b => {
         b.className = b.dataset.cat === cat ? 'cat-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white' : 'cat-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800';
       });
-      if (cat === 'ALL') renderEvents(events);
-      else renderEvents(events.filter(e => e.cat === cat));
+      if (cat === 'ALL') renderEvents(events, 'ALL');
+      else renderEvents(events.filter(e => e.cat === cat), cat);
     }
 
     function bookPass(title, price) {

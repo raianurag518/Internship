@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { EventItem } from '@/types/event';
 import EventCard from '@/components/events/EventCard';
 import BookingModal from '@/components/events/BookingModal';
-import { Search, SlidersHorizontal, Compass, Sparkles } from 'lucide-react';
+import { Search, SlidersHorizontal, Compass, Sparkles, CalendarX2, ArrowRight } from 'lucide-react';
 
 const CATEGORIES = ['ALL', 'HACKATHONS', 'TECHNICAL', 'CULTURAL', 'MUSIC', 'SPORTS', 'WORKSHOPS', 'ENTREPRENEURSHIP', 'COMPETITIONS'];
 
@@ -15,12 +15,14 @@ export default function EventsPage() {
   const [sortBy, setSortBy] = useState('date_asc');
   const [selectedEventForBooking, setSelectedEventForBooking] = useState<EventItem | null>(null);
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (overrideCategory?: string, overrideSearch?: string) => {
     setLoading(true);
     try {
+      const cat = overrideCategory !== undefined ? overrideCategory : selectedCategory;
+      const s = overrideSearch !== undefined ? overrideSearch : search;
       const params = new URLSearchParams();
-      if (selectedCategory !== 'ALL') params.append('category', selectedCategory);
-      if (search.trim()) params.append('search', search.trim());
+      if (cat !== 'ALL') params.append('category', cat);
+      if (s.trim()) params.append('search', s.trim());
       if (sortBy) params.append('sortBy', sortBy);
       const res = await fetch('/api/events?' + params.toString());
       const data = await res.json();
@@ -29,6 +31,12 @@ export default function EventsPage() {
   };
 
   useEffect(() => { fetchEvents(); }, [selectedCategory, sortBy]);
+
+  const handleResetFilters = () => {
+    setSelectedCategory('ALL');
+    setSearch('');
+    fetchEvents('ALL', '');
+  };
 
   const handleBookmarkToggle = (eventId: string, isSaved: boolean) => {
     setEvents((prev) =>
@@ -70,6 +78,36 @@ export default function EventsPage() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{[1,2,3].map(i => <div key={i} className="h-80 bg-slate-900 rounded-3xl animate-pulse"></div>)}</div>
+      ) : events.length === 0 ? (
+        <div className="py-16 sm:py-20 px-6 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-4 shadow-xl max-w-xl mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-950/80 border border-indigo-800/60 flex items-center justify-center mx-auto text-indigo-400 shadow-lg shadow-indigo-950/50">
+            <CalendarX2 className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-xl font-black text-white tracking-tight">
+              {selectedCategory !== 'ALL'
+                ? `No ${selectedCategory.replace('_', ' ')} Events Found`
+                : search.trim()
+                ? `No Events Matching "${search}"`
+                : 'No Campus Events Found'}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+              {selectedCategory !== 'ALL'
+                ? `There are currently no college events scheduled under the "${selectedCategory.replace('_', ' ')}" category. Explore all upcoming events across campuses!`
+                : 'There are currently no campus events matching your criteria. Explore all upcoming events across campuses!'}
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-xl shadow-indigo-600/30 transition hover:scale-105"
+            >
+              <span>View All Events</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((evt) => (
